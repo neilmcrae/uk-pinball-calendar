@@ -66,11 +66,20 @@ import urllib.error
 IFPA_BASE = "https://api.ifpapinball.com"
 AUTH_MODE = "query"  # "query" -> ?api_key=... , "header" -> X-Api-Key header
 
-# Pinball Republic detection: just look for this text (case-insensitive)
-# anywhere in the tournament's venue/address fields from the summary data
-# the calendar/search endpoint already gives us. No extra API calls.
+# Pinball Republic detection: IFPA's calendar/search response has NO venue
+# name field at all — just street address, city, state, zipcode. So "look
+# for the text Pinball Republic" (what this used to do) can never match;
+# the venue's name simply isn't present anywhere in the data. The postcode
+# is the only reliable signal, matched with whitespace/case stripped so
+# "CR0 1TY", "cr01ty", "CR0  1TY" etc. all hit regardless of which field
+# (zipcode, address, ...) it turns up in.
+PINBALL_REPUBLIC_POSTCODE = "CR0 1TY"
+# Kept as a fallback in case IFPA ever adds a venue-name field, or for
+# tournaments where an organiser mentions it in the free-text details.
 PINBALL_REPUBLIC_TEXT = "pinball republic"
 
+def _norm_postcode(s):
+    return re.sub(r"\s+", "", str(s or "")).upper()
 
 def _flatten_strings(obj, _depth=0):
     """Yield every string value found anywhere inside a nested dict/list,
@@ -211,7 +220,9 @@ def normalise(item):
     # substring search over whatever this one summary record contains.
     all_strings = list(_flatten_strings(item))
     full_blob = " ".join(all_strings)
-    is_pr = PINBALL_REPUBLIC_TEXT in full_blob.lower()
+    is_pr = PINBALL_REPUBLIC_POSTCODE in _norm_postcode(full_blob)
+    if not is_pr:
+        is_pr = PINBALL_REPUBLIC_TEXT in full_blob.lower()
 
     # Best-effort address/postcode for display, and to help debug PR
     # detection — also searched recursively rather than one fixed field.
