@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UK Pinball Tournament Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Big+Shoulders+Display:wght@600;800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12141b;
+    --panel:#1a1e29;
+    --panel-2:#212636;
+    --line: #2c3244;
+    --text:#f2efe4;
+    --muted:#8d94ab;
+    --amber:#ff9f1c;
+    --amber-dim: #7a5420;
+    --felt:#2fa876;
+    --felt-dim:#1c4a3a;
+    --tilt:#e8543f;
+    --chrome:#c8ccd8;
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 900px 500px at 20% -10%, rgba(255,159,28,0.10), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(47,168,118,0.10), transparent 60%),
+      var(--ink);
+    color:var(--text);
+    font-family:'Inter', system-ui, sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:28px 20px 80px;}
+
+  /* ---- Header / marquee ---- */
+  header{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:20px;
+    flex-wrap:wrap;
+    border-bottom:1px solid var(--line);
+    padding-bottom:20px; margin-bottom:22px;
+  }
+  .brand-eyebrow{
+    font-family:'Space Mono', monospace;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    font-size:11px;
+    color:var(--amber);
+    margin:0 0 6px;
+  }
+  h1{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800;
+    font-size:44px;
+    line-height:.95;
+    letter-spacing:.01em;
+    margin:0;
+    text-transform:uppercase;
+  }
+  h1 span{color:var(--amber);}
+  .subline{color:var(--muted); font-size:14px; margin-top:8px; max-width:46ch;}
+  .cross-link{color:var(--amber); text-decoration:none; font-weight:600; white-space:nowrap;}
+  .cross-link:hover{text-decoration:underline;}
+  .stat-strip{display:flex; gap:22px; font-family:'Space Mono',monospace;}
+  .stat{text-align:right;}
+  .stat .n{font-size:26px; font-weight:700; color:var(--chrome); display:block; line-height:1;}
+  .stat .l{font-size:10px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase;}
+
+  /* ---- Controls ---- */
+  .controls{
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+    margin-bottom:18px;
+  }
+  .search{
+    flex:1 1 220px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:10px 14px;
+    color:var(--text);
+    font-family:'Inter';
+    font-size:14px;
+  }
+  .search::placeholder{color:var(--muted);}
+  .toggle-group{display:flex; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  .toggle-group button{
+    background:var(--panel); color:var(--muted); border:none; padding:10px 16px;
+    font-family:'Inter'; font-size:13px; font-weight:600; cursor:pointer;
+    border-right:1px solid var(--line);
+  }
+  .toggle-group button:last-child{border-right:none;}
+  .toggle-group button.active{background:var(--amber); color:#1a1206;}
+  .chip-btn{
+    background:var(--panel); border:1px solid var(--line); color:var(--muted);
+    border-radius:999px; padding:9px 16px; font-size:13px; font-weight:600;
+    cursor:pointer; display:flex; align-items:center; gap:7px; white-space:nowrap;
+  }
+  .chip-btn .dot{width:8px; height:8px; border-radius:50%; background:var(--felt);}
+  .chip-btn.active{border-color:var(--felt); color:var(--felt);}
+
+  /* ---- Layout ---- */
+  .layout{display:grid; grid-template-columns: 1fr 300px; gap:22px;}
+  @media (max-width:860px){ .layout{grid-template-columns:1fr;} }
+
+  /* ---- Calendar ---- */
+  .cal-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px;
+  }
+  .cal-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .cal-nav button{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--chrome);
+    width:34px; height:34px; border-radius:8px; cursor:pointer; font-size:16px;
+  }
+  .cal-nav button:hover{border-color:var(--amber); color:var(--amber);}
+  .cal-month{
+    font-family:'Big Shoulders Display'; font-weight:800; font-size:24px;
+    text-transform:uppercase; letter-spacing:.03em;
+  }
+  .weekdays{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:6px;}
+  .weekdays div{
+    text-align:center; font-size:10px; letter-spacing:.1em; color:var(--muted);
+    font-family:'Space Mono'; text-transform:uppercase; padding-bottom:4px;
+  }
+  .days{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
+  .day{
+    aspect-ratio:1/0.82;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:6px;
+    position:relative;
+    cursor:default;
+    display:flex; flex-direction:column;
+  }
+  .day.empty{background:transparent; border:none;}
+  .day.today{border-color:var(--amber);}
+  .day .num{font-size:12px; color:var(--muted); font-family:'Space Mono';}
+  .day.today .num{color:var(--amber); font-weight:700;}
+  .day .evts{margin-top:auto; display:flex; flex-direction:column; gap:2px;}
+  .evt-pill{
+    font-size:9.5px; padding:2px 5px; border-radius:4px; background:var(--amber-dim);
+    color:#ffe3bd; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    cursor:pointer; border-left:2px solid var(--amber);
+  }
+  .evt-pill.pr{ background:var(--felt-dim); color:#c9f5e2; border-left-color:var(--felt);}
+  .day.has-events{cursor:pointer;}
+  .day.has-events:hover{border-color:var(--chrome);}
+  .day .more{font-size:9px; color:var(--muted);}
+
+  /* ---- Sidebar / list ---- */
+  .side-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px;
+    max-height:640px; overflow:auto;
+  }
+  .side-title{
+    font-family:'Space Mono'; text-transform:uppercase; letter-spacing:.12em; font-size:11px;
+    color:var(--muted); margin-bottom:12px; display:flex; justify-content:space-between;
+  }
+  .agenda-item{
+    border-bottom:1px solid var(--line); padding:12px 0; display:flex; gap:12px;
+  }
+  .agenda-item:last-child{border-bottom:none;}
+  .agenda-date{
+    font-family:'Space Mono'; font-size:12px; color:var(--amber); width:52px; flex:none;
+    line-height:1.25;
+  }
+  .agenda-date b{display:block; font-size:19px; color:var(--chrome); font-family:'Big Shoulders Display';}
+  .agenda-name{font-size:13.5px; font-weight:600; color:var(--text); line-height:1.3;}
+  .agenda-meta{font-size:11.5px; color:var(--muted); margin-top:3px;}
+  .agenda-meta .tag{
+    display:inline-block; background:var(--panel-2); border:1px solid var(--line);
+    border-radius:5px; padding:1px 6px; margin-right:5px; font-size:10px;
+  }
+  .agenda-meta .tag.pr{color:var(--felt); border-color:var(--felt-dim);}
+  .agenda-item:hover .agenda-name{color:var(--amber);}
+
+  /* ---- List view (full width table) ---- */
+  .list-card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:6px 0; display:none;}
+  .list-card.active{display:block;}
+  .list-row{
+    display:grid; grid-template-columns: 90px 1fr 160px 100px 130px;
+    gap:14px; padding:13px 20px; border-bottom:1px solid var(--line); align-items:center;
+    text-decoration:none; color:inherit;
+  }
+  .list-row:last-child{border-bottom:none;}
+  .list-row:hover{background:var(--panel-2);}
+  .list-row .d{font-family:'Space Mono'; color:var(--amber); font-size:12.5px;}
+  .list-row .n{font-weight:600; font-size:14px;}
+  .list-row .name-link{color:var(--text); text-decoration:none;}
+  .list-row .name-link:hover{color:var(--amber); text-decoration:underline;}
+  .list-row .v{color:var(--muted); font-size:12.5px;}
+  .list-row .t{font-size:11px;}
+  .list-row .l{display:flex; gap:6px; flex-wrap:wrap;}
+  .link-chip{
+    font-family:'Space Mono'; font-size:10px; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--chrome); background:var(--panel-2); border:1px solid var(--line);
+    border-radius:5px; padding:3px 7px; text-decoration:none;
+  }
+  .link-chip:hover{border-color:var(--amber); color:var(--amber);}
+  .list-head{
+    display:grid; grid-template-columns: 90px 1fr 160px 100px 130px; gap:14px; padding:10px 20px;
+    font-family:'Space Mono'; font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted);
+    border-bottom:1px solid var(--line);
+  }
+  .list-head .sortable{
+    cursor:pointer; user-select:none; display:flex; align-items:center; gap:4px;
+  }
+  .list-head .sortable:hover{color:var(--chrome);}
+  .list-head .sortable.active{color:var(--amber);}
+  .list-head .sortable .arrow{font-size:9px; opacity:.85;}
+  @media (max-width:640px){
+    .list-row, .list-head{grid-template-columns: 62px 1fr auto; }
+    .list-row .v, .list-row .t, .list-head div:nth-child(3), .list-head div:nth-child(4){display:none;}
+  }
+
+  .cal-view{display:block;}
+  .cal-view.hidden{display:none;}
+
+  footer{
+    margin-top:34px; padding-top:16px; border-top:1px solid var(--line);
+    color:var(--muted); font-size:12px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+  footer b{color:var(--chrome);}
+
+  .empty-note{padding:40px 20px; text-align:center; color:var(--muted); font-size:13px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <p class="brand-eyebrow">Domino Organisation &middot; IFPA Data Feed</p>
+      <h1>UK Pinball <span>Calendar</span></h1>
+      <p class="subline">Every IFPA-endorsed tournament happening around the UK, pulled straight from the IFPA database. <a href="pinball-republic.html" class="cross-link">Pinball Republic events only &rarr;</a></p>
+    </div>
+    <div class="stat-strip">
+      <div class="stat"><span class="n" id="statTotal">0</span><span class="l">Listed</span></div>
+      <div class="stat"><span class="n" id="statUpcoming">0</span><span class="l">Upcoming</span></div>
+      <div class="stat"><span class="n" id="statPR">0</span><span class="l">Pinball Republic</span></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <input class="search" id="search" type="text" placeholder="Search tournament, city or venue&hellip;">
+    <button class="chip-btn" id="prToggle"><span class="dot"></span>Pinball Republic only</button>
+    <div class="toggle-group">
+      <button id="viewCalBtn">Calendar</button>
+      <button id="viewListBtn" class="active">List</button>
+    </div>
+  </div>
+
+  <div class="cal-view hidden" id="calView">
+    <div class="layout">
+      <div class="cal-card">
+        <div class="cal-nav">
+          <button id="prevMonth">&#8249;</button>
+          <div class="cal-month" id="monthLabel">&mdash;</div>
+          <button id="nextMonth">&#8250;</button>
+        </div>
+        <div class="weekdays">
+          <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+        </div>
+        <div class="days" id="daysGrid"></div>
+      </div>
+
+      <div class="side-card">
+        <div class="side-title"><span>Next up</span><span id="agendaCount"></span></div>
+        <div id="agendaList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="list-card active" id="listView">
+    <div class="list-head">
+      <div class="sortable" data-sort="date">Date</div>
+      <div class="sortable" data-sort="name">Tournament</div>
+      <div class="sortable" data-sort="venue">Venue / City</div>
+      <div class="sortable" data-sort="type">Type</div>
+      <div>Links</div>
+    </div>
+    <div id="listRows"></div>
+  </div>
+
+  <footer>
+    <span>Source: <b>IFPA API</b> &middot; refresh by re-running <b>fetch_ifpa_uk_tournaments.py</b></span>
+    <span id="lastUpdated"></span>
+  </footer>
+</div>
+
+<!-- IFPA_DATA_START -->
+<script id="tournament-data" type="application/json">
+{
+  "generated_at": "2026-08-08",
+  "tournaments": [
+    {
+      "id": "ukopen26",
+      "name": "UK Open & European Pinball Championship 2026",
+      "venue": "Wandsworth Civic Suite",
+      "city": "London",
+      "start_date": "2026-09-24",
+      "end_date": "2026-09-27",
+      "type": "Major",
+      "pinball_republic": false,
+      "ifpa_url": "https://www.ifpapinball.com/",
+      "info_url": "https://ukopen.co.uk/"
+    }
+  ]
+}
+</script>
+<!-- IFPA_DATA_END -->
+
+<script>
+const raw = JSON.parse(document.getElementById('tournament-data').textContent);
+const tournaments = (raw.tournaments || []).map(t => ({
+  ...t,
+  _start: new Date(t.start_date + 'T00:00:00'),
+  _end: new Date((t.end_date || t.start_date) + 'T00:00:00')
+})).sort((a,b) => a._start - b._start);
+
+document.getElementById('lastUpdated').textContent = 'Last updated ' + (raw.generated_at || '');
+
+let filterPR = false;
+let filterText = '';
+let viewMode = 'list';
+let cursor = new Date(); cursor.setDate(1);
+
+const today = new Date(); today.setHours(0,0,0,0);
+
+function matches(t){
+  if(filterPR && !t.pinball_republic) return false;
+  if(filterText){
+    const hay = (t.name+' '+t.city+' '+t.venue).toLowerCase();
+    if(!hay.includes(filterText)) return false;
+  }
+  return true;
+}
+
+function dayKey(d){ return d.toISOString().slice(0,10); }
+
+function eventsOnDay(d){
+  // Only shown on their start date — a 4-day tournament gets one pill,
+  // on day one, not a copy in every day's cell.
+  return tournaments.filter(t => matches(t) && sameDay(t._start, d));
+}
+
+function sameDay(a, b){
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+
+function fmtDate(d){
+  return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short'});
+}
+
+function renderStats(){
+  document.getElementById('statTotal').textContent = tournaments.length;
+  document.getElementById('statUpcoming').textContent = tournaments.filter(t => t._end >= today).length;
+  document.getElementById('statPR').textContent = tournaments.filter(t => t.pinball_republic).length;
+}
+
+function renderCalendar(){
+  const y = cursor.getFullYear(), m = cursor.getMonth();
+  document.getElementById('monthLabel').textContent =
+    cursor.toLocaleDateString('en-GB', {month:'long', year:'numeric'});
+
+  const grid = document.getElementById('daysGrid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(y, m, 1);
+  let startOffset = firstDay.getDay() - 1; if(startOffset < 0) startOffset = 6;
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+
+  for(let i=0; i<startOffset; i++){
+    const cell = document.createElement('div');
+    cell.className = 'day empty';
+    grid.appendChild(cell);
+  }
+
+  for(let d=1; d<=daysInMonth; d++){
+    const date = new Date(y, m, d);
+    const evts = eventsOnDay(date);
+    const cell = document.createElement('div');
+    cell.className = 'day' + (evts.length ? ' has-events' : '') + (date.getTime()===today.getTime() ? ' today' : '');
+    const num = document.createElement('div');
+    num.className = 'num';
+    num.textContent = d;
+    cell.appendChild(num);
+
+    if(evts.length){
+      const evtsWrap = document.createElement('div');
+      evtsWrap.className = 'evts';
+      evts.slice(0,2).forEach(t => {
+        const pill = document.createElement('div');
+        pill.className = 'evt-pill' + (t.pinball_republic ? ' pr' : '');
+        pill.textContent = t.name;
+        const span = t.start_date === t.end_date ? '' : ` (through ${fmtDate(t._end)})`;
+        pill.title = t.name + span + ' — ' + (t.address || (t.venue + ', ' + t.city));
+        if(t.ifpa_url) pill.onclick = () => window.open(t.ifpa_url, '_blank');
+        evtsWrap.appendChild(pill);
+      });
+      if(evts.length > 2){
+        const more = document.createElement('div');
+        more.className = 'more';
+        more.textContent = '+' + (evts.length - 2) + ' more';
+        evtsWrap.appendChild(more);
+      }
+      cell.appendChild(evtsWrap);
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function renderAgenda(){
+  const upcoming = tournaments.filter(t => matches(t) && t._end >= today).slice(0, 12);
+  const wrap = document.getElementById('agendaList');
+  document.getElementById('agendaCount').textContent = upcoming.length + ' shown';
+  wrap.innerHTML = '';
+  if(!upcoming.length){
+    wrap.innerHTML = '<div class="empty-note">No matching tournaments.</div>';
+    return;
+  }
+  upcoming.forEach(t => {
+    const item = document.createElement('div');
+    item.className = 'agenda-item';
+    const dateSpan = t.start_date === t.end_date
+      ? ''
+      : `&ndash;${fmtDate(t._end)}`;
+    item.innerHTML = `
+      <div class="agenda-date"><b>${t._start.getDate()}</b>${t._start.toLocaleDateString('en-GB',{month:'short'})}</div>
+      <div>
+        <div class="agenda-name">
+          <a class="name-link" href="${t.ifpa_url}" target="_blank" rel="noopener">${t.name}</a>
+          ${t.info_url ? ` &middot; <a class="name-link" href="${t.info_url}" target="_blank" rel="noopener">site</a>` : ''}
+        </div>
+        <div class="agenda-meta">
+          <span class="tag${t.pinball_republic ? ' pr' : ''}">${t.pinball_republic ? 'Pinball Republic' : (t.type || 'Tournament')}</span>
+          ${t.city || ''}${dateSpan}
+        </div>
+      </div>`;
+    wrap.appendChild(item);
+  });
+}
+
+let sortState = { key: 'date', dir: 1 }; // dir: 1 = asc, -1 = desc
+
+function sortItems(items){
+  const { key, dir } = sortState;
+  const sorters = {
+    date:  t => t._start.getTime(),
+    name:  t => t.name.toLowerCase(),
+    venue: t => (t.venue + ' ' + t.city).toLowerCase(),
+    type:  t => (t.pinball_republic ? 'pinball republic' : (t.type || '')).toLowerCase(),
+  };
+  const get = sorters[key] || sorters.date;
+  return [...items].sort((a,b) => {
+    const av = get(a), bv = get(b);
+    if(av < bv) return -1 * dir;
+    if(av > bv) return 1 * dir;
+    return 0;
+  });
+}
+
+function updateSortHeaders(){
+  document.querySelectorAll('.list-head .sortable').forEach(el => {
+    const key = el.dataset.sort;
+    const active = key === sortState.key;
+    el.classList.toggle('active', active);
+    const label = el.textContent.replace(/[▲▼]/g,'').trim();
+    el.innerHTML = label + (active ? `<span class="arrow">${sortState.dir === 1 ? '▲' : '▼'}</span>` : '');
+  });
+}
+
+function renderList(){
+  const rows = document.getElementById('listRows');
+  const items = sortItems(tournaments.filter(matches));
+  updateSortHeaders();
+  rows.innerHTML = '';
+  if(!items.length){
+    rows.innerHTML = '<div class="empty-note">No matching tournaments.</div>';
+    return;
+  }
+  items.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'list-row';
+    const dateStr = t.start_date === t.end_date
+      ? fmtDate(t._start)
+      : fmtDate(t._start) + '&ndash;' + fmtDate(t._end);
+    const nameHtml = t.ifpa_url
+      ? `<a class="name-link" href="${t.ifpa_url}" target="_blank" rel="noopener">${t.name}</a>`
+      : t.name;
+    const linksHtml = [
+      t.ifpa_url ? `<a class="link-chip" href="${t.ifpa_url}" target="_blank" rel="noopener">IFPA</a>` : '',
+      t.info_url ? `<a class="link-chip" href="${t.info_url}" target="_blank" rel="noopener">Website</a>` : '',
+    ].filter(Boolean).join(' ');
+    row.innerHTML = `
+      <div class="d">${dateStr}</div>
+      <div class="n">${nameHtml}</div>
+      <div class="v" title="${t.address || ''}">${t.venue ? t.venue+', ' : ''}${t.city||''}</div>
+      <div class="t">${t.pinball_republic ? 'Pinball Republic' : (t.type||'')}</div>
+      <div class="l">${linksHtml}</div>`;
+    rows.appendChild(row);
+  });
+}
+
+function renderAll(){
+  renderStats();
+  renderCalendar();
+  renderAgenda();
+  renderList();
+}
+
+document.querySelectorAll('.list-head .sortable').forEach(el => {
+  el.addEventListener('click', () => {
+    const key = el.dataset.sort;
+    if(sortState.key === key){
+      sortState.dir *= -1;
+    } else {
+      sortState = { key, dir: 1 };
+    }
+    renderList();
+  });
+});
+
+document.getElementById('prevMonth').onclick = () => { cursor.setMonth(cursor.getMonth()-1); renderCalendar(); };
+document.getElementById('nextMonth').onclick = () => { cursor.setMonth(cursor.getMonth()+1); renderCalendar(); };
+document.getElementById('search').oninput = (e) => { filterText = e.target.value.toLowerCase(); renderAll(); };
+document.getElementById('prToggle').onclick = (e) => {
+  filterPR = !filterPR;
+  e.target.classList.toggle('active', filterPR);
+  renderAll();
+};
+document.getElementById('viewCalBtn').onclick = () => {
+  viewMode='cal';
+  document.getElementById('calView').classList.remove('hidden');
+  document.getElementById('listView').classList.remove('active');
+  document.getElementById('viewCalBtn').classList.add('active');
+  document.getElementById('viewListBtn').classList.remove('active');
+};
+document.getElementById('viewListBtn').onclick = () => {
+  viewMode='list';
+  document.getElementById('calView').classList.add('hidden');
+  document.getElementById('listView').classList.add('active');
+  document.getElementById('viewListBtn').classList.add('active');
+  document.getElementById('viewCalBtn').classList.remove('active');
+};
+
+renderAll();
+</script>
+</body>
+</html>

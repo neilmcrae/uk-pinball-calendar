@@ -1,0 +1,67 @@
+name: Refresh and Publish to GitHub Pages
+
+# Runs automatically on a schedule, and can also be triggered manually
+# from the Actions tab in GitHub if you want an on-demand refresh.
+on:
+  schedule:
+    # 06:00 UTC daily. Cron is UTC regardless of your local time.
+    # Change the "6" to run at a different hour, or add more lines
+    # for multiple runs a day, e.g. "0 6,18 * * *" for twice a day.
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+  # Also republish whenever the pages themselves change, so manual edits
+  # to index.html/tournaments.html/pinball-republic.html go live too.
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "tournaments.html"
+      - "pinball-republic.html"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  refresh-and-publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Regenerate both calendar pages from the IFPA API
+        env:
+          IFPA_API_KEY: ${{ secrets.IFPA_API_KEY }}
+        run: python3 fetch_ifpa_uk_tournaments.py
+
+      - name: Stage the site (landing page + both calendars)
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+          cp tournaments.html _site/tournaments.html
+          cp pinball-republic.html _site/pinball-republic.html
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
