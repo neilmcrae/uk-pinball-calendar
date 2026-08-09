@@ -66,14 +66,20 @@ import urllib.error
 IFPA_BASE = "https://api.ifpapinball.com"
 AUTH_MODE = "query"  # "query" -> ?api_key=... , "header" -> X-Api-Key header
 
-# Pinball Republic detection: IFPA's calendar/search response has NO venue
-# name field at all — just street address, city, state, zipcode. So "look
-# for the text Pinball Republic" (what this used to do) can never match;
-# the venue's name simply isn't present anywhere in the data. The postcode
-# is the only reliable signal, matched with whitespace/case stripped so
-# "CR0 1TY", "cr01ty", "CR0  1TY" etc. all hit regardless of which field
-# (zipcode, address, ...) it turns up in.
-PINBALL_REPUBLIC_POSTCODE = "CR0"
+# Pinball Republic detection: confirmed against real production data that
+# IFPA's calendar/search endpoint leaves the postcode/zipcode field EMPTY
+# for these tournaments — so postcode matching can never work no matter how
+# it's normalised, the data just isn't there. There's also no venue-name
+# field at all.
+#
+# What IS reliably populated is `city`, and it turns out to be a clean
+# signal: every genuine Pinball Republic club event (PBR-prefixed names,
+# British Masters, Turkey Fry-up, UKCS Finals, etc.) is filed under city
+# "Croydon". The big showcase events (UK Open, European Pinball
+# Championship) are hosted off-site at a hotel and are filed under city
+# "London" instead — so matching on city correctly separates the two
+# without needing a postcode at all.
+PINBALL_REPUBLIC_CITY = "croydon"
 # Kept as a fallback in case IFPA ever adds a venue-name field, or for
 # tournaments where an organiser mentions it in the free-text details.
 PINBALL_REPUBLIC_TEXT = "pinball republic"
@@ -220,10 +226,9 @@ def normalise(item):
     # substring search over whatever this one summary record contains.
     all_strings = list(_flatten_strings(item))
     full_blob = " ".join(all_strings)
-    is_pr = PINBALL_REPUBLIC_POSTCODE in _norm_postcode(full_blob)
+    is_pr = city.strip().lower() == PINBALL_REPUBLIC_CITY
     if not is_pr:
-        is_pr = _norm_postcode(PINBALL_REPUBLIC_POSTCODE) in _norm_postcode(full_blob)
-
+        is_pr = PINBALL_REPUBLIC_TEXT in full_blob.lower()
     # Best-effort address/postcode for display, and to help debug PR
     # detection — also searched recursively rather than one fixed field.
     postcode_field = pick(
