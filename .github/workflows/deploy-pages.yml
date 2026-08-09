@@ -45,6 +45,7 @@ jobs:
       - name: Regenerate both calendar pages from the IFPA API
         env:
           IFPA_API_KEY: ${{ secrets.IFPA_API_KEY }}
+          IFPA_DEBUG: ${{ secrets.IFPA_DEBUG }}
         run: python3 fetch_ifpa_uk_tournaments.py
 
       - name: Stage the site (landing page + both calendars)
