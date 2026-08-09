@@ -369,9 +369,13 @@ def main():
     if raw_items and (info_count < len(rows) or multiday_count == 0 or pr_count == 0):
         print("  Run with IFPA_DEBUG=1 to see the raw field names IFPA is sending,")
         print("  then adjust the `pick(...)` calls for `info_url` / `start` / `end` in this script.")
-    rows = keep_future_uk_only(rows, today.isoformat())
-    print(f"Normalised to {len(rows)} future UK tournaments.")
-
+        rows = keep_future_uk_only(rows, today.isoformat())
+        print(f"Normalised to {len(rows)} future UK tournaments.")
+    if pr_count == 0 and rows:
+        print("  No Pinball Republic matches — listing every UK tournament's "
+              "city/postcode so we can see if Croydon is even in the data:")
+        for r in rows:
+            print(f"    {r['start_date']}  {r['city']!r:20} {r['postcode']!r:12} {r['name']!r}")
     payload_all = {
         "generated_at": today.isoformat(),
         "source_endpoint": endpoint,
