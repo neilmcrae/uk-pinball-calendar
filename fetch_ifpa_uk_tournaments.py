@@ -73,7 +73,7 @@ AUTH_MODE = "query"  # "query" -> ?api_key=... , "header" -> X-Api-Key header
 # is the only reliable signal, matched with whitespace/case stripped so
 # "CR0 1TY", "cr01ty", "CR0  1TY" etc. all hit regardless of which field
 # (zipcode, address, ...) it turns up in.
-PINBALL_REPUBLIC_POSTCODE = "CR0 1TY"
+PINBALL_REPUBLIC_POSTCODE = "CR0"
 # Kept as a fallback in case IFPA ever adds a venue-name field, or for
 # tournaments where an organiser mentions it in the free-text details.
 PINBALL_REPUBLIC_TEXT = "pinball republic"
@@ -222,7 +222,7 @@ def normalise(item):
     full_blob = " ".join(all_strings)
     is_pr = PINBALL_REPUBLIC_POSTCODE in _norm_postcode(full_blob)
     if not is_pr:
-        is_pr = PINBALL_REPUBLIC_TEXT in full_blob.lower()
+        is_pr = _norm_postcode(PINBALL_REPUBLIC_POSTCODE) in _norm_postcode(full_blob)
 
     # Best-effort address/postcode for display, and to help debug PR
     # detection — also searched recursively rather than one fixed field.
